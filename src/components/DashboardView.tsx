@@ -33,24 +33,23 @@ export default function DashboardView() {
   const [summary, setSummary] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [habits, setHabits] = useState<Habit[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("buddy-habits");
-      if (saved) return JSON.parse(saved);
-    }
-    return DEFAULT_HABITS;
-  });
+  const [habits, setHabits] = useState<Habit[]>(DEFAULT_HABITS);
   const [newTodo, setNewTodo] = useState("");
-  const [todoDate, setTodoDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [todoDate, setTodoDate] = useState("");
+
+  // Load habits from localStorage after mount (avoids hydration mismatch)
+  useEffect(() => {
+    const saved = localStorage.getItem("buddy-habits");
+    if (saved) setHabits(JSON.parse(saved));
+    setTodoDate(new Date().toISOString().split("T")[0]);
+  }, []);
 
   useEffect(() => {
     fetchTodos();
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("buddy-habits", JSON.stringify(habits));
-    }
+    localStorage.setItem("buddy-habits", JSON.stringify(habits));
   }, [habits]);
 
   const fetchTodos = async () => {
