@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My AI Buddy - Personal Life Assistant
 
-## Getting Started
+A privacy-first AI personal life assistant that runs locally. It records, analyzes, and summarizes your daily life using RAG (Retrieval-Augmented Generation) with a persona-aware AI buddy.
 
-First, run the development server:
+## Features
+
+- **Chat with Buddy** — AI assistant that knows your identity, values, and habits
+- **Daily Journal** — Write daily logs with mood tracking, stored as vector embeddings
+- **Dashboard** — Habit tracker, to-do list (with date picker), and AI-generated daily summary
+- **RAG Memory** — All conversations, journals, and todos are stored in ChromaDB and used as context for smarter responses
+- **Smart Filtering** — Buddy understands time references (เมื่อวาน, last week, 3 วันก่อน) and filters memory by date/type
+- **Streaming Responses** — Real-time streamed chat with markdown rendering
+- **100% Local** — All data stays on your machine
+
+## Tech Stack
+
+- **Frontend:** Next.js 16 + React 19 + Tailwind CSS 4
+- **LLM Engine:** Ollama (llama3.2)
+- **Embeddings:** Ollama (nomic-embed-text)
+- **Vector Database:** ChromaDB
+- **Language:** TypeScript
+
+## Prerequisites
+
+- **Node.js** >= 20 ([download](https://nodejs.org))
+- **Docker** ([download](https://www.docker.com/products/docker-desktop))
+- **Ollama** ([download](https://ollama.com/download))
+
+## Setup Guide
+
+### 1. Install Ollama models
+
+After installing Ollama, open a terminal and pull the required models:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Chat model (~2GB)
+ollama pull llama3.2
+
+# Embedding model (~270MB)
+ollama pull nomic-embed-text
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Make sure Ollama is running:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+ollama serve
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. Start ChromaDB
 
-## Learn More
+```bash
+docker compose up -d
+```
 
-To learn more about Next.js, take a look at the following resources:
+This starts ChromaDB with token authentication on port 8000.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Configure environment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Create a `.env` file in the project root:
 
-## Deploy on Vercel
+```bash
+CHROMA_TOKEN=your-secret-token-here
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Make sure this token matches the one in `docker-compose.yml`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. Install dependencies and run
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+```text
+src/
+├── app/
+│   ├── api/
+│   │   ├── chat/route.ts       # Streaming chat API with RAG + persona
+│   │   ├── health/route.ts     # Service health check (Ollama + ChromaDB)
+│   │   ├── journal/route.ts    # Journal CRUD (stored in ChromaDB)
+│   │   └── todos/route.ts      # Todos CRUD (stored in ChromaDB)
+│   ├── chat/page.tsx            # Chat page
+│   ├── journal/page.tsx         # Journal page
+│   ├── page.tsx                 # Dashboard (home)
+│   ├── layout.tsx               # Root layout with sidebar
+│   └── globals.css              # Theme & styles
+├── components/
+│   ├── ChatView.tsx             # Chat interface
+│   ├── DashboardView.tsx        # Dashboard with habits, todos, summary
+│   ├── JournalView.tsx          # Journal entry form + history
+│   ├── Markdown.tsx             # Markdown renderer for AI responses
+│   └── Sidebar.tsx              # Navigation sidebar with health status
+└── lib/
+    ├── filter.ts                # Date/type detection for metadata filtering
+    ├── memory.ts                # ChromaDB client (add, query, update logs)
+    ├── ollama.ts                # Ollama client (chat, stream, embeddings)
+    ├── persona.json             # AI buddy identity & user profile config
+    └── prompt.ts                # System prompt & summary prompt builder
+```
+
+## How RAG Works
+
+1. All inputs (chat, journal, todos) are embedded via `nomic-embed-text` and stored in ChromaDB
+2. When you ask Buddy a question, it detects date/type filters from your message
+3. It performs a filtered semantic search + a broad search, merges and deduplicates results
+4. Relevant context is injected into the system prompt alongside the persona profile
+5. Ollama generates a response with full awareness of your history
