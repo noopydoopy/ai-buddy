@@ -22,7 +22,8 @@ Personality: ${persona.personality}
 
 ${getCurrentDateTime()}
 
-About the user:
+About the user you are assisting:
+- Name: ${persona.owner.name}
 - Identity: ${persona.owner.identity}
 - Core Values: ${persona.owner.coreValues.join(", ")}
 - Habits to track: ${persona.owner.habits.join(", ")}
@@ -30,6 +31,7 @@ About the user:
 
 Instructions:
 ${persona.instructions.map((i) => `- ${i}`).join("\n")}
+- Address the user by their name "${persona.owner.name}" naturally in conversation to be friendly and personal
 
 Language: ${persona.language}
 Always respond in English.
@@ -49,9 +51,11 @@ Use the above context when relevant to provide personalized, context-aware respo
 }
 
 export function buildSummaryPrompt(logs: string[]): string {
-  return `${buildSystemPrompt()}
+  return `You are "${persona.name}", a ${persona.role}.
+${getCurrentDateTime()}
 
-Based on the following daily logs, provide a comprehensive daily summary.
+You MUST summarize ONLY the logs provided below. Do NOT say you have no information. The logs below are the user's actual data for today.
+
 Focus on:
 1. Key activities of the day
 2. Progress towards goals (${persona.owner.coreValues.join(", ")})
@@ -59,9 +63,11 @@ Focus on:
 4. Actionable suggestions for tomorrow
 5. Observable mood/energy patterns
 
-=== Today's Logs ===
-${logs.join("\n---\n")}
-=== End of Logs ===
+Keep the summary concise — use bullet points where appropriate.
 
-Provide the summary in English.`;
+=== TODAY'S LOGS (${logs.length} entries) ===
+${logs.map((log, i) => `${i + 1}. ${log}`).join("\n")}
+=== END OF LOGS ===
+
+Summarize these ${logs.length} log entries above. Do not ignore them.`;
 }

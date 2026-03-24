@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { chatStream, ChatMessage } from "@/lib/ollama";
 import { buildSystemPrompt, buildSummaryPrompt } from "@/lib/prompt";
-import { addLog, queryLogs, getTodayLogs } from "@/lib/memory";
+import { queryLogs, getTodayLogs } from "@/lib/memory";
 import { detectFilters, buildWhereClause } from "@/lib/filter";
 import { extractTodos } from "@/lib/extract-todos";
 
@@ -20,11 +20,6 @@ export async function POST(req: NextRequest) {
     if (isSummary) {
       return handleSummary();
     }
-
-    // Store the user message in memory
-    await addLog(message, "chat").catch(() => {
-      // ChromaDB might not be running, continue without memory
-    });
 
     // Detect date/type filters from the message
     const filters = detectFilters(message);
@@ -94,29 +89,21 @@ export async function POST(req: NextRequest) {
             );
           }
 
-          // Store assistant response in memory
-          await addLog(fullResponse, "chat", { role: "assistant" }).catch(
-            () => {}
-          );
+          // Send [DONE] immediately so chat feels responsive
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
 
-          // Extract todos from user message and send as suggestions
+          // Extract todos after stream completes — sends as a late event
           try {
-            console.log("[extract-todos] Extracting from:", message);
             const extracted = await extractTodos(message);
-            console.log("[extract-todos] Result:", JSON.stringify(extracted));
             if (extracted.length > 0) {
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ suggestedTodos: extracted })}\n\n`)
               );
-              console.log("[extract-todos] Sent suggestions to client:", extracted.length);
-            } else {
-              console.log("[extract-todos] No tasks detected");
             }
-          } catch (err) {
-            console.error("[extract-todos] Error:", err);
+          } catch {
+            // ignore extraction failures
           }
 
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
           controller.enqueue(
@@ -146,6 +133,7 @@ async function handleSummary() {
   try {
     const todayLogs = await getTodayLogs();
 
+    console.log("[summary] Found logs:", todayLogs.documents.length, todayLogs.documents.slice(0, 3));
     if (todayLogs.documents.length === 0) {
       return Response.json({
         error: "No logs for today yet. Try chatting or writing a journal entry first.",
