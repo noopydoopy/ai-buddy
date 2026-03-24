@@ -4,9 +4,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: "📊", description: "Summary & Habits" },
+  { href: "/", label: "Dashboard", icon: "📊", description: "Overview & Summary" },
   { href: "/chat", label: "Chat", icon: "💬", description: "Talk with Buddy" },
   { href: "/journal", label: "Journal", icon: "📓", description: "Daily log" },
+  { href: "/habits", label: "Habits", icon: "🎯", description: "Track habits" },
 ];
 
 interface HealthStatus {
@@ -24,8 +25,8 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-lg">
-            B
+          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-xl">
+            🤖
           </div>
           <div>
             <h1 className="text-base font-semibold text-foreground">My AI Buddy</h1>

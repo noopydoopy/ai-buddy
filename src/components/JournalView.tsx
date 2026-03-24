@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { invalidateGreeting } from "@/lib/greeting-cache";
 
 interface JournalEntry {
   id: string;
@@ -62,6 +63,7 @@ export default function JournalView() {
         setEntries((prev) => [data.entry, ...prev]);
         setContent("");
         setMood("");
+        invalidateGreeting();
       }
     } catch {
       // ignore

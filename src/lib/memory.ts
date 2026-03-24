@@ -44,7 +44,7 @@ export interface LogEntry {
   id: string;
   content: string;
   timestamp: string;
-  type: "journal" | "chat" | "todo" | "summary";
+  type: "journal" | "chat" | "todo" | "summary" | "habit";
   metadata?: Record<string, string>;
 }
 
