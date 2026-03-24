@@ -9,6 +9,7 @@ services:
       - ANONYMIZED_TELEMETRY=FALSE
       - CHROMA_SERVER_AUTHN_CREDENTIALS=${CHROMA_TOKEN}
       - CHROMA_SERVER_AUTHN_PROVIDER=chromadb.auth.token_authn.TokenAuthenticationServerProvider
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["*"]
 
 volumes:
   chromadb_data:
