@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { addLog, getLogsByType } from "@/lib/memory";
+import { extractAndSaveTodos } from "@/lib/extract-todos";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
@@ -39,6 +40,9 @@ export async function POST(req: NextRequest) {
       mood: mood || "",
       id,
     });
+
+    // Extract todos from journal content (best-effort, non-blocking)
+    extractAndSaveTodos(content).catch(() => {});
 
     return Response.json({
       entry: { id, content, date: timestamp, mood: mood || undefined },

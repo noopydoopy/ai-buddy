@@ -14,6 +14,7 @@ export default function ChatView() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,6 +23,21 @@ export default function ChatView() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  const abortStream = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  };
+
+  const clearChat = () => {
+    abortStream();
+    setMessages([]);
+    setInput("");
+    inputRef.current?.focus();
+  };
 
   const sendMessage = async () => {
     const trimmed = input.trim();
@@ -35,6 +51,9 @@ export default function ChatView() {
     const assistantMessage: Message = { role: "assistant", content: "" };
     setMessages((prev) => [...prev, assistantMessage]);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -43,6 +62,7 @@ export default function ChatView() {
           message: trimmed,
           history: messages.slice(-10),
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -84,6 +104,10 @@ export default function ChatView() {
         }
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        // User cancelled — keep partial response
+        return;
+      }
       const errMsg = error instanceof Error ? error.message : "Something went wrong";
       setMessages((prev) => {
         const updated = [...prev];
@@ -94,6 +118,7 @@ export default function ChatView() {
         return updated;
       });
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
       inputRef.current?.focus();
     }
@@ -109,9 +134,19 @@ export default function ChatView() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-border">
-        <h2 className="text-lg font-semibold">Chat with Buddy</h2>
-        <p className="text-xs text-muted">พูดคุย ปรึกษา หรือบันทึกเรื่องราวผ่านแชท</p>
+      <header className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Chat with Buddy</h2>
+          <p className="text-xs text-muted">พูดคุย ปรึกษา หรือบันทึกเรื่องราวผ่านแชท</p>
+        </div>
+        {messages.length > 0 && (
+          <button
+            onClick={clearChat}
+            className="px-3 py-1.5 rounded-lg text-xs text-muted hover:text-foreground hover:bg-card-hover transition-colors cursor-pointer"
+          >
+            Clear chat
+          </button>
+        )}
       </header>
 
       {/* Messages */}
@@ -193,13 +228,22 @@ export default function ChatView() {
             rows={1}
             className="flex-1 resize-none rounded-xl bg-card border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
           />
-          <button
-            onClick={sendMessage}
-            disabled={isLoading || !input.trim()}
-            className="px-5 py-3 rounded-xl bg-accent text-background font-medium text-sm hover:bg-accent-dim transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isLoading ? "..." : "Send"}
-          </button>
+          {isLoading ? (
+            <button
+              onClick={abortStream}
+              className="px-5 py-3 rounded-xl bg-red-500/80 text-white font-medium text-sm hover:bg-red-500 transition-colors cursor-pointer"
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim()}
+              className="px-5 py-3 rounded-xl bg-accent text-background font-medium text-sm hover:bg-accent-dim transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Send
+            </button>
+          )}
         </div>
       </footer>
     </div>

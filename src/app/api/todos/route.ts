@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import { addLog, getLogsByType, updateLog } from "@/lib/memory";
+import { addLog, getLogsByType, updateLog, deleteLog } from "@/lib/memory";
 
 export async function GET() {
   try {
@@ -51,6 +51,23 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : "Failed to save todo";
+    return Response.json({ error: errMsg }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return Response.json({ error: "ID is required" }, { status: 400 });
+  }
+
+  try {
+    await deleteLog(id);
+    return Response.json({ success: true });
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : "Failed to delete todo";
     return Response.json({ error: errMsg }, { status: 500 });
   }
 }

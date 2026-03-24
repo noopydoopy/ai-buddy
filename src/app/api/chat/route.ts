@@ -3,6 +3,7 @@ import { chatStream, ChatMessage } from "@/lib/ollama";
 import { buildSystemPrompt, buildSummaryPrompt } from "@/lib/prompt";
 import { addLog, queryLogs, getTodayLogs } from "@/lib/memory";
 import { detectFilters, buildWhereClause } from "@/lib/filter";
+import { extractAndSaveTodos } from "@/lib/extract-todos";
 
 export async function POST(req: NextRequest) {
   const { message, history = [] } = await req.json();
@@ -97,6 +98,9 @@ export async function POST(req: NextRequest) {
           await addLog(fullResponse, "chat", { role: "assistant" }).catch(
             () => {}
           );
+
+          // Extract todos from user message (best-effort, non-blocking)
+          extractAndSaveTodos(message).catch(() => {});
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();

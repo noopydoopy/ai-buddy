@@ -95,6 +95,17 @@ export default function DashboardView() {
     }
   };
 
+  const deleteTodo = async (id: string) => {
+    try {
+      const res = await fetch(`/api/todos?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setTodos((prev) => prev.filter((t) => t.id !== id));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const generateSummary = useCallback(async () => {
     setIsSummarizing(true);
     setSummary("");
@@ -310,32 +321,43 @@ export default function DashboardView() {
                 </p>
               )}
               {todos.map((todo) => (
-                <button
+                <div
                   key={todo.id}
-                  onClick={() => toggleTodo(todo.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors group ${
                     todo.done
                       ? "text-muted line-through"
                       : "text-foreground"
                   } hover:bg-card-hover`}
                 >
-                  <span
-                    className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
-                      todo.done
-                        ? "bg-accent border-accent text-background"
-                        : "border-border"
-                    }`}
+                  <button
+                    onClick={() => toggleTodo(todo.id)}
+                    className="flex items-center gap-3 flex-1 cursor-pointer text-left"
                   >
-                    {todo.done && "✓"}
-                  </span>
-                  <span className="text-left flex-1">{todo.text}</span>
+                    <span
+                      className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                        todo.done
+                          ? "bg-accent border-accent text-background"
+                          : "border-border"
+                      }`}
+                    >
+                      {todo.done && "✓"}
+                    </span>
+                    <span className="flex-1">{todo.text}</span>
+                  </button>
                   <span className="text-xs text-muted shrink-0">
                     {formatDate(todo.date)}
                   </span>
                   {todo.source === "ai" && (
                     <span className="text-xs text-accent/60 shrink-0">AI</span>
                   )}
-                </button>
+                  <button
+                    onClick={() => deleteTodo(todo.id)}
+                    className="text-xs text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                    title="ลบ"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           </div>

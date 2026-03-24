@@ -1,8 +1,26 @@
 import persona from "./persona.json";
 
+function getCurrentDateTime(): string {
+  const now = new Date();
+  const date = now.toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const time = now.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const isoDate = now.toISOString().split("T")[0];
+  return `Current date: ${date} (${isoDate}), Time: ${time}`;
+}
+
 export function buildSystemPrompt(context?: string): string {
   const base = `You are "${persona.name}", a ${persona.role}.
 Personality: ${persona.personality}
+
+${getCurrentDateTime()}
 
 About the user:
 - Identity: ${persona.owner.identity}
