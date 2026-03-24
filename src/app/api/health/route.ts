@@ -2,22 +2,23 @@ import { listModels } from "@/lib/ollama";
 
 export async function GET() {
   const status = {
-    ollama: false,
-    chromadb: false,
+    llm: false,
+    database: false,
     models: [] as string[],
   };
 
   try {
     const models = await listModels();
-    status.ollama = true;
+    status.llm = true;
     status.models = models.map((m) => m.name);
   } catch {
-    // Ollama not running
+    // LLM not running
   }
 
   try {
-    const res = await fetch("http://localhost:8000/api/v2/heartbeat");
-    status.chromadb = res.ok;
+    const chromaUrl = process.env.CHROMA_URL || "http://localhost:8000";
+    const res = await fetch(`${chromaUrl}/api/v2/heartbeat`);
+    status.database = res.ok;
   } catch {
     // ChromaDB not running
   }

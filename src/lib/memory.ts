@@ -2,8 +2,12 @@ import { ChromaClient, Collection } from "chromadb";
 import { v4 as uuidv4 } from "uuid";
 import { getEmbedding } from "./ollama";
 
+const chromaUrl = new URL(process.env.CHROMA_URL || "http://localhost:8000");
+
 const chroma = new ChromaClient({
-  path: "http://localhost:8000",
+  host: chromaUrl.hostname,
+  port: parseInt(chromaUrl.port) || 8000,
+  ssl: chromaUrl.protocol === "https:",
   auth: {
     provider: "token",
     credentials: process.env.CHROMA_TOKEN || "",

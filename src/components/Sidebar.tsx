@@ -11,8 +11,8 @@ const navItems = [
 ];
 
 interface HealthStatus {
-  ollama: boolean;
-  chromadb: boolean;
+  llm: boolean;
+  database: boolean;
   models: string[];
 }
 
@@ -86,12 +86,12 @@ function StatusIndicator() {
   return (
     <div className="flex items-center gap-3 text-xs text-muted">
       <ServiceDot
-        service="Ollama"
-        status={health === null ? undefined : health.ollama}
+        service="LLM"
+        status={health === null ? undefined : health.llm}
       />
       <ServiceDot
-        service="ChromaDB"
-        status={health === null ? undefined : health.chromadb}
+        service="Database"
+        status={health === null ? undefined : health.database}
       />
     </div>
   );
