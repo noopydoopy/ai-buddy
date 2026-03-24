@@ -39,6 +39,8 @@ export default function DashboardView() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [todoDate, setTodoDate] = useState("");
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [todosExpanded, setTodosExpanded] = useState(false);
   const [greeting, setGreeting] = useState("");
   const [isGreetingLoading, setIsGreetingLoading] = useState(true);
 
@@ -393,52 +395,78 @@ export default function DashboardView() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              {todos.length === 0 && (
-                <p className="text-sm text-muted text-center py-4">
-                  No to-dos yet — add one manually or chat with Buddy to auto-create
-                </p>
-              )}
-              {todos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors group ${
-                    todo.done
-                      ? "text-muted line-through"
-                      : "text-foreground"
-                  } hover:bg-card-hover`}
-                >
-                  <button
-                    onClick={() => toggleTodo(todo.id)}
-                    className="flex items-center gap-3 flex-1 cursor-pointer text-left"
-                  >
-                    <span
-                      className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
-                        todo.done
-                          ? "bg-accent border-accent text-background"
-                          : "border-border"
-                      }`}
-                    >
-                      {todo.done && "✓"}
-                    </span>
-                    <span className="flex-1">{todo.text}</span>
-                  </button>
-                  <span className="text-xs text-muted shrink-0">
-                    {formatDate(todo.date)}
-                  </span>
-                  {todo.source === "ai" && (
-                    <span className="text-xs text-accent/60 shrink-0">AI</span>
+            {(() => {
+              const activeTodos = todos.filter((t) => !t.done);
+              const doneTodos = todos.filter((t) => t.done);
+              const COLLAPSED_LIMIT = 5;
+              const visibleActive = todosExpanded
+                ? activeTodos
+                : activeTodos.slice(0, COLLAPSED_LIMIT);
+              const hiddenActiveCount = activeTodos.length - COLLAPSED_LIMIT;
+
+              return (
+                <div className="space-y-2">
+                  {todos.length === 0 && (
+                    <p className="text-sm text-muted text-center py-4">
+                      No to-dos yet — add one manually or chat with Buddy to auto-create
+                    </p>
                   )}
-                  <button
-                    onClick={() => deleteTodo(todo.id)}
-                    className="text-xs text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
-                    title="Delete"
-                  >
-                    ✕
-                  </button>
+
+                  {/* Active todos */}
+                  <div className={`space-y-1 ${todosExpanded ? "max-h-96 overflow-y-auto" : ""}`}>
+                    {visibleActive.map((todo) => (
+                      <TodoItem
+                        key={todo.id}
+                        todo={todo}
+                        onToggle={toggleTodo}
+                        onDelete={deleteTodo}
+                        formatDate={formatDate}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Show more / less */}
+                  {hiddenActiveCount > 0 && (
+                    <button
+                      onClick={() => setTodosExpanded(!todosExpanded)}
+                      className="text-xs text-accent hover:text-accent-dim transition-colors cursor-pointer w-full text-center py-1"
+                    >
+                      {todosExpanded
+                        ? "Show less"
+                        : `Show ${hiddenActiveCount} more`}
+                    </button>
+                  )}
+
+                  {/* Completed toggle */}
+                  {doneTodos.length > 0 && (
+                    <>
+                      <button
+                        onClick={() => setShowCompleted(!showCompleted)}
+                        className="text-xs text-muted hover:text-foreground transition-colors cursor-pointer flex items-center gap-1 py-1"
+                      >
+                        <span className={`transition-transform ${showCompleted ? "rotate-90" : ""}`}>
+                          ▸
+                        </span>
+                        {doneTodos.length} completed
+                      </button>
+                      {showCompleted && (
+                        <div className={`space-y-1 ${doneTodos.length > 5 ? "max-h-48 overflow-y-auto" : ""}`}>
+                          {doneTodos.map((todo) => (
+                            <TodoItem
+                              key={todo.id}
+                              todo={todo}
+                              onToggle={toggleTodo}
+                              onDelete={deleteTodo}
+                              formatDate={formatDate}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </div>
 
           {/* Daily Summary */}
@@ -468,6 +496,55 @@ export default function DashboardView() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TodoItem({
+  todo,
+  onToggle,
+  onDelete,
+  formatDate,
+}: {
+  todo: Todo;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  formatDate: (date: string) => string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors group ${
+        todo.done ? "text-muted line-through" : "text-foreground"
+      } hover:bg-card-hover`}
+    >
+      <button
+        onClick={() => onToggle(todo.id)}
+        className="flex items-center gap-3 flex-1 cursor-pointer text-left"
+      >
+        <span
+          className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+            todo.done
+              ? "bg-accent border-accent text-background"
+              : "border-border"
+          }`}
+        >
+          {todo.done && "✓"}
+        </span>
+        <span className="flex-1">{todo.text}</span>
+      </button>
+      <span className="text-xs text-muted shrink-0">
+        {formatDate(todo.date)}
+      </span>
+      {todo.source === "ai" && (
+        <span className="text-xs text-accent/60 shrink-0">AI</span>
+      )}
+      <button
+        onClick={() => onDelete(todo.id)}
+        className="text-xs text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+        title="Delete"
+      >
+        ✕
+      </button>
     </div>
   );
 }
