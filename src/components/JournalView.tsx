@@ -23,7 +23,7 @@ export default function JournalView() {
   const [mood, setMood] = useState("");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [todayDate] = useState(() => new Date().toLocaleDateString("th-TH", {
+  const [todayDate] = useState(() => new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -82,11 +82,11 @@ export default function JournalView() {
         <div className="max-w-3xl mx-auto space-y-6">
           {/* New Entry */}
           <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-            <h3 className="text-sm font-medium text-foreground">เขียนบันทึกวันนี้</h3>
+            <h3 className="text-sm font-medium text-foreground">Write today's entry</h3>
 
             {/* Mood selector */}
             <div>
-              <p className="text-xs text-muted mb-2">วันนี้รู้สึกยังไง?</p>
+              <p className="text-xs text-muted mb-2">How are you feeling today?</p>
               <div className="flex gap-2">
                 {MOODS.map((m) => (
                   <button
@@ -109,7 +109,7 @@ export default function JournalView() {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="วันนี้ทำอะไรบ้าง? รู้สึกยังไง? มีอะไรอยากบันทึกไว้?"
+              placeholder="What did you do today? How do you feel? Anything you want to log?"
               rows={6}
               className="w-full resize-none rounded-lg bg-background border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
@@ -119,14 +119,14 @@ export default function JournalView() {
               disabled={isSaving || !content.trim()}
               className="px-5 py-2.5 rounded-lg bg-accent text-background font-medium text-sm hover:bg-accent-dim transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              {isSaving ? "กำลังบันทึก..." : "บันทึก"}
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </div>
 
           {/* Past Entries */}
           {entries.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted">บันทึกล่าสุด</h3>
+              <h3 className="text-sm font-medium text-muted">Recent entries</h3>
               {entries.map((entry) => (
                 <div
                   key={entry.id}
@@ -134,7 +134,7 @@ export default function JournalView() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-muted">
-                      {new Date(entry.date).toLocaleString("th-TH")}
+                      {new Date(entry.date).toLocaleString("en-US")}
                     </span>
                     {entry.mood && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-card-hover text-muted">

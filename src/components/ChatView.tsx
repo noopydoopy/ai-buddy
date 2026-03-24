@@ -88,14 +88,13 @@ export default function ChatView() {
             try {
               const parsed = JSON.parse(data);
               if (parsed.text) {
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const last = updated[updated.length - 1];
-                  if (last.role === "assistant") {
-                    last.content += parsed.text;
-                  }
-                  return updated;
-                });
+                setMessages((prev) =>
+                  prev.map((msg, idx) =>
+                    idx === prev.length - 1 && msg.role === "assistant"
+                      ? { ...msg, content: msg.content + parsed.text }
+                      : msg
+                  )
+                );
               }
             } catch {
               // skip
@@ -137,7 +136,7 @@ export default function ChatView() {
       <header className="px-6 py-4 border-b border-border flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Chat with Buddy</h2>
-          <p className="text-xs text-muted">พูดคุย ปรึกษา หรือบันทึกเรื่องราวผ่านแชท</p>
+          <p className="text-xs text-muted">Chat, consult, or log your daily stories</p>
         </div>
         {messages.length > 0 && (
           <button
@@ -156,16 +155,16 @@ export default function ChatView() {
             <div className="text-center py-20">
               <div className="text-6xl mb-4">💬</div>
               <h2 className="text-xl font-semibold text-foreground mb-2">
-                สวัสดี! ฉันคือ Buddy
+                Hi! I'm Buddy
               </h2>
               <p className="text-muted max-w-md mx-auto">
-                ผู้ช่วยส่วนตัวของคุณ พร้อมช่วยบันทึก วิเคราะห์ และจัดการชีวิตประจำวัน
+                Your personal assistant — ready to log, analyze, and manage your daily life
               </p>
               <div className="flex flex-wrap gap-2 justify-center mt-6">
                 {[
-                  "วันนี้เป็นยังไงบ้าง?",
+                  "How was my day?",
                   "Summary of my day",
-                  "ช่วยวางแผนพรุ่งนี้หน่อย",
+                  "Help me plan tomorrow",
                 ].map((suggestion) => (
                   <button
                     key={suggestion}
@@ -224,7 +223,7 @@ export default function ChatView() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="พิมพ์ข้อความ... (Enter ส่ง, Shift+Enter ขึ้นบรรทัดใหม่)"
+            placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
             rows={1}
             className="flex-1 resize-none rounded-xl bg-card border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
           />

@@ -4,9 +4,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: "📊", description: "สรุป & Habits" },
-  { href: "/chat", label: "Chat", icon: "💬", description: "พูดคุยกับ Buddy" },
-  { href: "/journal", label: "Journal", icon: "📓", description: "บันทึกประจำวัน" },
+  { href: "/", label: "Dashboard", icon: "📊", description: "Summary & Habits" },
+  { href: "/chat", label: "Chat", icon: "💬", description: "Talk with Buddy" },
+  { href: "/journal", label: "Journal", icon: "📓", description: "Daily log" },
 ];
 
 interface HealthStatus {

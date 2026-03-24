@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     // Check for special commands
     const isSummary = message.toLowerCase().includes("summary of my day") ||
-      message.includes("สรุปวันนี้");
+      message.toLowerCase().includes("summarize today");
 
     if (isSummary) {
       return handleSummary();
@@ -134,7 +134,7 @@ async function handleSummary() {
 
     if (todayLogs.documents.length === 0) {
       return Response.json({
-        error: "ยังไม่มี log สำหรับวันนี้ ลองพูดคุยหรือบันทึกอะไรสักอย่างก่อนนะ",
+        error: "No logs for today yet. Try chatting or writing a journal entry first.",
       }, { status: 400 });
     }
 

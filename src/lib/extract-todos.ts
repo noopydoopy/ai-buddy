@@ -28,8 +28,8 @@ Response format:
 If no tasks found, respond with: []
 
 Examples:
-- "พรุ่งนี้ต้องประชุมทีม .NET ตอน 10 โมง" → [{"text": "ประชุมทีม .NET ตอน 10 โมง", "date": "${tomorrowStr}"}]
-- "วันนี้ออกกำลังกายแล้ว รู้สึกดีมาก" → []
+- "I have a team meeting tomorrow at 10am" → [{"text": "team meeting at 10am", "date": "${tomorrowStr}"}]
+- "I exercised today and feel great" → []
 - "I need to fix the login bug and deploy to staging tomorrow" → [{"text": "fix the login bug", "date": ""}, {"text": "deploy to staging", "date": "${tomorrowStr}"}]`;
 }
 

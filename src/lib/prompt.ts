@@ -2,13 +2,13 @@ import persona from "./persona.json";
 
 function getCurrentDateTime(): string {
   const now = new Date();
-  const date = now.toLocaleDateString("th-TH", {
+  const date = now.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  const time = now.toLocaleTimeString("th-TH", {
+  const time = now.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -32,7 +32,7 @@ Instructions:
 ${persona.instructions.map((i) => `- ${i}`).join("\n")}
 
 Language: ${persona.language}
-Always respond in Thai (mixing English technical terms naturally).`;
+Always respond in English.`;
 
   if (context) {
     return `${base}
@@ -52,15 +52,15 @@ export function buildSummaryPrompt(logs: string[]): string {
 
 Based on the following daily logs, provide a comprehensive daily summary.
 Focus on:
-1. สรุปกิจกรรมหลักของวัน
-2. Progress ต่อเป้าหมาย (${persona.owner.coreValues.join(", ")})
+1. Key activities of the day
+2. Progress towards goals (${persona.owner.coreValues.join(", ")})
 3. Habit tracking (${persona.owner.habits.join(", ")})
-4. Actionable suggestions สำหรับพรุ่งนี้
-5. Mood/Energy pattern ที่สังเกตได้
+4. Actionable suggestions for tomorrow
+5. Observable mood/energy patterns
 
 === Today's Logs ===
 ${logs.join("\n---\n")}
 === End of Logs ===
 
-Please provide the summary in Thai (mix English technical terms).`;
+Provide the summary in English.`;
 }

@@ -119,7 +119,7 @@ export default function DashboardView() {
 
       if (!response.ok) {
         const err = await response.json();
-        setSummary(`ยังไม่มีข้อมูลเพียงพอ: ${err.error || "ลองบันทึก journal หรือแชทก่อนนะ"}`);
+        setSummary(`Not enough data: ${err.error || "Try logging a journal or chatting first"}`);
         return;
       }
 
@@ -148,7 +148,7 @@ export default function DashboardView() {
         }
       }
     } catch {
-      setSummary("ไม่สามารถสร้างสรุปได้ ลองอีกครั้ง");
+      setSummary("Unable to generate summary. Please try again.");
     } finally {
       setIsSummarizing(false);
     }
@@ -204,10 +204,10 @@ export default function DashboardView() {
     const today = new Date().toISOString().split("T")[0];
     const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    if (dateStr === today) return "วันนี้";
-    if (dateStr === tomorrow) return "พรุ่งนี้";
-    if (dateStr === yesterday) return "เมื่อวาน";
-    return new Date(dateStr + "T00:00:00").toLocaleDateString("th-TH", {
+    if (dateStr === today) return "Today";
+    if (dateStr === tomorrow) return "Tomorrow";
+    if (dateStr === yesterday) return "Yesterday";
+    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
     });
@@ -217,7 +217,7 @@ export default function DashboardView() {
     <div className="flex flex-col h-full">
       <header className="px-6 py-4 border-b border-border">
         <h2 className="text-lg font-semibold">Dashboard</h2>
-        <p className="text-xs text-muted">ภาพรวมวันนี้ — habits, todos & summary</p>
+        <p className="text-xs text-muted">Today's overview — habits, todos & summary</p>
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -244,7 +244,7 @@ export default function DashboardView() {
                     <div className="text-xs opacity-70">
                       {getStreak(habit) > 0
                         ? `🔥 ${getStreak(habit)} day streak`
-                        : "ยังไม่เริ่ม"}
+                        : "Not started"}
                     </div>
                   </div>
                   {isTodayDone(habit) && (
@@ -268,7 +268,7 @@ export default function DashboardView() {
                   value={newTodo}
                   onChange={(e) => setNewTodo(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addTodo()}
-                  placeholder="เพิ่ม to-do ใหม่..."
+                  placeholder="Add a new to-do..."
                   className="flex-1 rounded-lg bg-background border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
                 <button
@@ -280,7 +280,7 @@ export default function DashboardView() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted">วันที่:</span>
+                <span className="text-xs text-muted">Date:</span>
                 <input
                   type="date"
                   value={todoDate}
@@ -295,7 +295,7 @@ export default function DashboardView() {
                       : "text-muted hover:text-foreground"
                   }`}
                 >
-                  วันนี้
+                  Today
                 </button>
                 <button
                   onClick={() =>
@@ -309,7 +309,7 @@ export default function DashboardView() {
                       : "text-muted hover:text-foreground"
                   }`}
                 >
-                  พรุ่งนี้
+                  Tomorrow
                 </button>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function DashboardView() {
             <div className="space-y-2">
               {todos.length === 0 && (
                 <p className="text-sm text-muted text-center py-4">
-                  ยังไม่มี to-do — เพิ่มเอง หรือแชทกับ Buddy แล้วจะช่วยสร้างให้
+                  No to-dos yet — add one manually or chat with Buddy to auto-create
                 </p>
               )}
               {todos.map((todo) => (
@@ -353,7 +353,7 @@ export default function DashboardView() {
                   <button
                     onClick={() => deleteTodo(todo.id)}
                     className="text-xs text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
-                    title="ลบ"
+                    title="Delete"
                   >
                     ✕
                   </button>
@@ -373,7 +373,7 @@ export default function DashboardView() {
                 disabled={isSummarizing}
                 className="px-4 py-1.5 rounded-lg bg-accent/15 text-accent text-xs font-medium hover:bg-accent/25 transition-colors disabled:opacity-40 cursor-pointer"
               >
-                {isSummarizing ? "กำลังสรุป..." : "สรุปวันนี้"}
+                {isSummarizing ? "Summarizing..." : "Summarize today"}
               </button>
             </div>
 
@@ -383,7 +383,7 @@ export default function DashboardView() {
               </div>
             ) : (
               <p className="text-sm text-muted text-center py-6">
-                กดปุ่ม &quot;สรุปวันนี้&quot; เพื่อให้ Buddy สรุปกิจกรรมของคุณ
+                Click &quot;Summarize today&quot; to let Buddy summarize your activities
               </p>
             )}
           </div>

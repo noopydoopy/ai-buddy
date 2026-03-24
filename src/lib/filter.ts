@@ -1,5 +1,5 @@
 /**
- * Detects date and type filters from user messages (Thai + English).
+ * Detects date and type filters from user messages.
  * Returns ChromaDB-compatible where clauses.
  */
 
@@ -21,41 +21,24 @@ export function detectFilters(message: string): DetectedFilter {
 
   // --- Date detection ---
 
-  // Today
-  if (
-    lower.includes("วันนี้") ||
-    lower.includes("today") ||
-    lower.includes("ตอนนี้")
-  ) {
+  if (lower.includes("today") || lower.includes("right now")) {
     result.dates.push(formatDate(today));
   }
 
-  // Yesterday
-  if (
-    lower.includes("เมื่อวาน") ||
-    lower.includes("yesterday") ||
-    lower.includes("เมื่อวานนี้")
-  ) {
+  if (lower.includes("yesterday")) {
     result.dates.push(formatDate(daysAgo(1)));
   }
 
-  // Day before yesterday
-  if (lower.includes("เมื่อวานซืน") || lower.includes("day before yesterday")) {
+  if (lower.includes("day before yesterday")) {
     result.dates.push(formatDate(daysAgo(2)));
   }
 
-  // Tomorrow
-  if (lower.includes("พรุ่งนี้") || lower.includes("tomorrow")) {
+  if (lower.includes("tomorrow")) {
     result.dates.push(formatDate(daysFromNow(1)));
   }
 
   // This week
-  if (
-    lower.includes("สัปดาห์นี้") ||
-    lower.includes("อาทิตย์นี้") ||
-    lower.includes("this week") ||
-    lower.includes("wk นี้")
-  ) {
+  if (lower.includes("this week")) {
     const monday = getMonday(today);
     const sunday = new Date(monday);
     sunday.setDate(sunday.getDate() + 6);
@@ -63,11 +46,7 @@ export function detectFilters(message: string): DetectedFilter {
   }
 
   // Last week
-  if (
-    lower.includes("สัปดาห์ที่แล้ว") ||
-    lower.includes("อาทิตย์ที่แล้ว") ||
-    lower.includes("last week")
-  ) {
+  if (lower.includes("last week")) {
     const lastMonday = getMonday(today);
     lastMonday.setDate(lastMonday.getDate() - 7);
     const lastSunday = new Date(lastMonday);
@@ -78,19 +57,15 @@ export function detectFilters(message: string): DetectedFilter {
     };
   }
 
-  // N days ago: "3 วันก่อน", "3 days ago"
-  const daysAgoMatch =
-    lower.match(/(\d+)\s*วันก่อน/) || lower.match(/(\d+)\s*days?\s*ago/);
+  // N days ago: "3 days ago"
+  const daysAgoMatch = lower.match(/(\d+)\s*days?\s*ago/);
   if (daysAgoMatch) {
     const n = parseInt(daysAgoMatch[1]);
     result.dates.push(formatDate(daysAgo(n)));
   }
 
-  // Last N days: "5 วันที่ผ่านมา", "last 5 days"
-  const lastNDaysMatch =
-    lower.match(/(\d+)\s*วันที่ผ่านมา/) ||
-    lower.match(/last\s*(\d+)\s*days?/) ||
-    lower.match(/(\d+)\s*วันล่าสุด/);
+  // Last N days: "last 5 days"
+  const lastNDaysMatch = lower.match(/last\s*(\d+)\s*days?/);
   if (lastNDaysMatch) {
     const n = parseInt(lastNDaysMatch[1]);
     result.dateRange = {
@@ -100,7 +75,7 @@ export function detectFilters(message: string): DetectedFilter {
   }
 
   // This month
-  if (lower.includes("เดือนนี้") || lower.includes("this month")) {
+  if (lower.includes("this month")) {
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     result.dateRange = { from: formatDate(firstDay), to: formatDate(today) };
   }
@@ -109,9 +84,8 @@ export function detectFilters(message: string): DetectedFilter {
 
   if (
     lower.includes("journal") ||
-    lower.includes("บันทึก") ||
-    lower.includes("ไดอารี่") ||
-    lower.includes("diary")
+    lower.includes("diary") ||
+    lower.includes("log entry")
   ) {
     result.types.push("journal");
   }
@@ -119,19 +93,15 @@ export function detectFilters(message: string): DetectedFilter {
   if (
     lower.includes("todo") ||
     lower.includes("to-do") ||
-    lower.includes("สิ่งที่ต้องทำ") ||
-    lower.includes("งาน") ||
     lower.includes("task")
   ) {
     result.types.push("todo");
   }
 
   if (
-    lower.includes("แชท") ||
     lower.includes("chat") ||
-    lower.includes("คุย") ||
-    lower.includes("พูดคุย") ||
-    lower.includes("conversation")
+    lower.includes("conversation") ||
+    lower.includes("talked about")
   ) {
     result.types.push("chat");
   }
