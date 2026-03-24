@@ -8,9 +8,8 @@ const chroma = new ChromaClient({
   host: chromaUrl.hostname,
   port: parseInt(chromaUrl.port) || 8000,
   ssl: chromaUrl.protocol === "https:",
-  auth: {
-    provider: "token",
-    credentials: process.env.CHROMA_TOKEN || "",
+  headers: {
+    Authorization: `Bearer ${process.env.CHROMA_TOKEN || ""}`,
   },
 });
 
