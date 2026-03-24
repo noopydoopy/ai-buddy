@@ -106,6 +106,14 @@ export function detectFilters(message: string): DetectedFilter {
     result.types.push("chat");
   }
 
+  // Default: if no date detected, use this week as default range
+  if (result.dates.length === 0 && !result.dateRange) {
+    const monday = getMonday(today);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    result.dateRange = { from: formatDate(monday), to: formatDate(sunday) };
+  }
+
   return result;
 }
 

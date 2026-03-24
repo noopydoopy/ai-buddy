@@ -32,7 +32,8 @@ Instructions:
 ${persona.instructions.map((i) => `- ${i}`).join("\n")}
 
 Language: ${persona.language}
-Always respond in English.`;
+Always respond in English.
+Keep responses concise — aim for 2-4 sentences unless the user asks for detail. Be direct, skip filler.`;
 
   if (context) {
     return `${base}

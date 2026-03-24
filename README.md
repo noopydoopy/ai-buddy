@@ -113,6 +113,59 @@ src/
 
 ## How RAG Works
 
+### Storing data
+
+When you save a journal entry, chat message, todo, or habit log:
+
+```
+User writes: "Had a great workout at the gym, ran 5km"
+        │
+        ▼
+  getEmbedding(content)              → Ollama nomic-embed-text model
+        │
+        ▼
+  Returns 768-dim vector             → [0.023, -0.156, 0.089, ...]
+        │
+        ▼
+  ChromaDB stores:
+    document  = "Had a great workout at the gym, ran 5km"
+    embedding = [0.023, -0.156, 0.089, ...]
+    metadata  = { type: "journal", date: "2026-03-24", mood: "Good" }
+```
+
+The embedding model converts text into a vector (a point in 768-dimensional space) where **similar meanings are close together**. So "gym workout" and "exercise at fitness center" would have similar vectors even though the words are different.
+
+### Querying (RAG search)
+
+When you ask Buddy a question:
+
+```
+User asks: "How much exercise did I do?"
+        │
+        ├─► detectFilters() → no date found → defaults to "this week"
+        │
+        ├─► getEmbedding("How much exercise did I do?")
+        │   → query vector: [0.018, -0.142, 0.095, ...]
+        │
+        ▼
+  ChromaDB compares query vector against all stored vectors
+  within the date range using cosine similarity:
+        │
+        │   "Had a great workout, ran 5km"    → similarity: 0.89 ✓
+        │   "Exercise: Ran 3km morning jog"   → similarity: 0.85 ✓
+        │   "Fixed login bug in .NET"         → similarity: 0.12 ✗
+        │   "Read 30 pages of Clean Code"     → similarity: 0.15 ✗
+        │
+        ▼
+  Top 5 results injected into system prompt as context
+        │
+        ▼
+  Ollama LLM generates response with awareness of your history:
+  → "This week you ran 5km at the gym and did a 3km morning jog."
+```
+
+### Summary
+
 1. All inputs (chat, journal, todos, habits) are embedded via `nomic-embed-text` and stored in ChromaDB
 2. When you ask Buddy a question, it detects date/type filters from your message
 3. It performs a filtered semantic search + a broad search, merges and deduplicates results
