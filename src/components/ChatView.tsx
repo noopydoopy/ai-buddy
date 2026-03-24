@@ -8,10 +8,21 @@ interface Message {
   content: string;
 }
 
+interface SuggestedTodo {
+  text: string;
+  date: string;
+}
+
+interface TodoSuggestion {
+  todos: SuggestedTodo[];
+  accepted: boolean | null; // null = pending, true = accepted, false = dismissed
+}
+
 export default function ChatView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<Map<number, TodoSuggestion>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -22,7 +33,7 @@ export default function ChatView() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, scrollToBottom]);
+  }, [messages, suggestions, scrollToBottom]);
 
   const abortStream = () => {
     if (abortControllerRef.current) {
@@ -35,8 +46,44 @@ export default function ChatView() {
   const clearChat = () => {
     abortStream();
     setMessages([]);
+    setSuggestions(new Map());
     setInput("");
     inputRef.current?.focus();
+  };
+
+  const acceptTodos = async (msgIndex: number) => {
+    const suggestion = suggestions.get(msgIndex);
+    if (!suggestion || suggestion.accepted !== null) return;
+
+    // Save all todos
+    for (const todo of suggestion.todos) {
+      try {
+        await fetch("/api/todos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: todo.text, date: todo.date, source: "ai" }),
+        });
+      } catch {
+        // ignore individual failures
+      }
+    }
+
+    setSuggestions((prev) => {
+      const updated = new Map(prev);
+      updated.set(msgIndex, { ...suggestion, accepted: true });
+      return updated;
+    });
+  };
+
+  const dismissTodos = (msgIndex: number) => {
+    const suggestion = suggestions.get(msgIndex);
+    if (!suggestion || suggestion.accepted !== null) return;
+
+    setSuggestions((prev) => {
+      const updated = new Map(prev);
+      updated.set(msgIndex, { ...suggestion, accepted: false });
+      return updated;
+    });
   };
 
   const sendMessage = async () => {
@@ -53,6 +100,9 @@ export default function ChatView() {
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
+
+    // The assistant message index (for linking suggestions)
+    const assistantIndex = messages.length + 1;
 
     try {
       const response = await fetch("/api/chat", {
@@ -96,6 +146,16 @@ export default function ChatView() {
                   )
                 );
               }
+              if (parsed.suggestedTodos && parsed.suggestedTodos.length > 0) {
+                setSuggestions((prev) => {
+                  const updated = new Map(prev);
+                  updated.set(assistantIndex, {
+                    todos: parsed.suggestedTodos,
+                    accepted: null,
+                  });
+                  return updated;
+                });
+              }
             } catch {
               // skip
             }
@@ -104,18 +164,16 @@ export default function ChatView() {
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        // User cancelled — keep partial response
         return;
       }
       const errMsg = error instanceof Error ? error.message : "Something went wrong";
-      setMessages((prev) => {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        if (last.role === "assistant") {
-          last.content = `Error: ${errMsg}`;
-        }
-        return updated;
-      });
+      setMessages((prev) =>
+        prev.map((msg, idx) =>
+          idx === prev.length - 1 && msg.role === "assistant"
+            ? { ...msg, content: `Error: ${errMsg}` }
+            : msg
+        )
+      );
     } finally {
       abortControllerRef.current = null;
       setIsLoading(false);
@@ -128,6 +186,17 @@ export default function ChatView() {
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const formatDate = (dateStr: string): string => {
+    const today = new Date().toISOString().split("T")[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    if (dateStr === today) return "today";
+    if (dateStr === tomorrow) return "tomorrow";
+    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -182,33 +251,44 @@ export default function ChatView() {
           )}
 
           {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+            <div key={i}>
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-user-bubble text-white rounded-br-md whitespace-pre-wrap"
-                    : "bg-ai-bubble text-foreground border border-border rounded-bl-md"
-                }`}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {msg.role === "assistant" ? (
-                  msg.content ? (
-                    <Markdown content={msg.content} />
-                  ) : (
-                    isLoading && (
-                      <span className="inline-flex gap-1">
-                        <span className="animate-bounce">.</span>
-                        <span className="animate-bounce [animation-delay:0.2s]">.</span>
-                        <span className="animate-bounce [animation-delay:0.4s]">.</span>
-                      </span>
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-user-bubble text-white rounded-br-md whitespace-pre-wrap"
+                      : "bg-ai-bubble text-foreground border border-border rounded-bl-md"
+                  }`}
+                >
+                  {msg.role === "assistant" ? (
+                    msg.content ? (
+                      <Markdown content={msg.content} />
+                    ) : (
+                      isLoading && (
+                        <span className="inline-flex gap-1">
+                          <span className="animate-bounce">.</span>
+                          <span className="animate-bounce [animation-delay:0.2s]">.</span>
+                          <span className="animate-bounce [animation-delay:0.4s]">.</span>
+                        </span>
+                      )
                     )
-                  )
-                ) : (
-                  msg.content
-                )}
+                  ) : (
+                    msg.content
+                  )}
+                </div>
               </div>
+
+              {/* Todo suggestions card */}
+              {msg.role === "assistant" && suggestions.has(i) && (
+                <TodoSuggestionCard
+                  suggestion={suggestions.get(i)!}
+                  onAccept={() => acceptTodos(i)}
+                  onDismiss={() => dismissTodos(i)}
+                  formatDate={formatDate}
+                />
+              )}
             </div>
           ))}
           <div ref={messagesEndRef} />
@@ -245,6 +325,66 @@ export default function ChatView() {
           )}
         </div>
       </footer>
+    </div>
+  );
+}
+
+function TodoSuggestionCard({
+  suggestion,
+  onAccept,
+  onDismiss,
+  formatDate,
+}: {
+  suggestion: TodoSuggestion;
+  onAccept: () => void;
+  onDismiss: () => void;
+  formatDate: (date: string) => string;
+}) {
+  const { todos, accepted } = suggestion;
+
+  return (
+    <div className="flex justify-start mt-2">
+      <div className="max-w-[80%] rounded-xl bg-card border border-accent/20 px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs font-medium text-accent">Tasks detected</span>
+        </div>
+        <ul className="space-y-1.5 mb-3">
+          {todos.map((todo, j) => (
+            <li key={j} className="flex items-center gap-2 text-foreground">
+              <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 text-xs ${
+                accepted === true
+                  ? "bg-accent border-accent text-background"
+                  : "border-border"
+              }`}>
+                {accepted === true && "✓"}
+              </span>
+              <span className="flex-1">{todo.text}</span>
+              <span className="text-xs text-muted shrink-0">{formatDate(todo.date)}</span>
+            </li>
+          ))}
+        </ul>
+
+        {accepted === null ? (
+          <div className="flex gap-2">
+            <button
+              onClick={onAccept}
+              className="px-3 py-1.5 rounded-lg bg-accent text-background text-xs font-medium hover:bg-accent-dim transition-colors cursor-pointer"
+            >
+              Add to to-dos
+            </button>
+            <button
+              onClick={onDismiss}
+              className="px-3 py-1.5 rounded-lg bg-card-hover text-muted text-xs font-medium hover:text-foreground transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : accepted ? (
+          <p className="text-xs text-green-400">Added to your to-dos</p>
+        ) : (
+          <p className="text-xs text-muted">Dismissed</p>
+        )}
+      </div>
     </div>
   );
 }

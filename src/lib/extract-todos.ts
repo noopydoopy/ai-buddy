@@ -1,6 +1,4 @@
 import { chat, ChatMessage } from "./ollama";
-import { addLog } from "./memory";
-import { v4 as uuidv4 } from "uuid";
 
 function buildExtractPrompt(): string {
   const today = new Date();
@@ -33,15 +31,18 @@ Examples:
 - "I need to fix the login bug and deploy to staging tomorrow" → [{"text": "fix the login bug", "date": ""}, {"text": "deploy to staging", "date": "${tomorrowStr}"}]`;
 }
 
-interface ExtractedTodo {
+export interface ExtractedTodo {
   text: string;
   date: string;
 }
 
-export async function extractAndSaveTodos(userMessage: string): Promise<ExtractedTodo[]> {
+/**
+ * Extract todos from a message (does NOT save them).
+ * Returns an array of extracted todos for user confirmation.
+ */
+export async function extractTodos(userMessage: string): Promise<ExtractedTodo[]> {
   try {
-    const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
 
     const messages: ChatMessage[] = [
       { role: "system", content: buildExtractPrompt() },
@@ -52,35 +53,27 @@ export async function extractAndSaveTodos(userMessage: string): Promise<Extracte
     ];
 
     const response = await chat(messages);
+    console.log("[extract-todos] LLM raw response:", response);
 
     // Parse JSON from response — handle cases where LLM wraps in markdown
     const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-
-    const todos: ExtractedTodo[] = JSON.parse(jsonMatch[0]);
-    if (!Array.isArray(todos) || todos.length === 0) return [];
-
-    // Save each extracted todo to ChromaDB
-    const saved: ExtractedTodo[] = [];
-    for (const todo of todos) {
-      if (!todo.text || typeof todo.text !== "string") continue;
-
-      const id = uuidv4();
-      const todoDate = todo.date || todayStr;
-      const timestamp = `${todoDate}T${new Date().toISOString().split("T")[1]}`;
-
-      await addLog(todo.text.trim(), "todo", {
-        id,
-        source: "ai",
-        done: "false",
-      }, timestamp);
-
-      saved.push({ text: todo.text.trim(), date: todoDate });
+    if (!jsonMatch) {
+      console.log("[extract-todos] No JSON array found in response");
+      return [];
     }
 
-    return saved;
+    const todos: ExtractedTodo[] = JSON.parse(jsonMatch[0]);
+    console.log("[extract-todos] Parsed todos:", JSON.stringify(todos));
+    if (!Array.isArray(todos) || todos.length === 0) return [];
+
+    // Clean up and fill defaults
+    return todos
+      .filter((t) => t.text && typeof t.text === "string")
+      .map((t) => ({
+        text: t.text.trim(),
+        date: t.date || todayStr,
+      }));
   } catch {
-    // Extraction is best-effort — don't break chat if it fails
     return [];
   }
 }

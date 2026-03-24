@@ -3,7 +3,7 @@ import { chatStream, ChatMessage } from "@/lib/ollama";
 import { buildSystemPrompt, buildSummaryPrompt } from "@/lib/prompt";
 import { addLog, queryLogs, getTodayLogs } from "@/lib/memory";
 import { detectFilters, buildWhereClause } from "@/lib/filter";
-import { extractAndSaveTodos } from "@/lib/extract-todos";
+import { extractTodos } from "@/lib/extract-todos";
 
 export async function POST(req: NextRequest) {
   const { message, history = [] } = await req.json();
@@ -99,8 +99,22 @@ export async function POST(req: NextRequest) {
             () => {}
           );
 
-          // Extract todos from user message (best-effort, non-blocking)
-          extractAndSaveTodos(message).catch(() => {});
+          // Extract todos from user message and send as suggestions
+          try {
+            console.log("[extract-todos] Extracting from:", message);
+            const extracted = await extractTodos(message);
+            console.log("[extract-todos] Result:", JSON.stringify(extracted));
+            if (extracted.length > 0) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ suggestedTodos: extracted })}\n\n`)
+              );
+              console.log("[extract-todos] Sent suggestions to client:", extracted.length);
+            } else {
+              console.log("[extract-todos] No tasks detected");
+            }
+          } catch (err) {
+            console.error("[extract-todos] Error:", err);
+          }
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();

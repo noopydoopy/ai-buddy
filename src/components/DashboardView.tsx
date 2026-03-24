@@ -478,13 +478,28 @@ export default function DashboardView() {
               <button
                 onClick={generateSummary}
                 disabled={isSummarizing}
-                className="px-4 py-1.5 rounded-lg bg-accent/15 text-accent text-xs font-medium hover:bg-accent/25 transition-colors disabled:opacity-40 cursor-pointer"
+                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  isSummarizing
+                    ? "bg-accent/25 text-accent animate-pulse"
+                    : "bg-accent/15 text-accent hover:bg-accent/25 disabled:opacity-40"
+                }`}
               >
-                {isSummarizing ? "Summarizing..." : "Summarize today"}
+                {isSummarizing ? "Buddy is thinking..." : "Summarize today"}
               </button>
             </div>
 
-            {summary ? (
+            {isSummarizing && !summary ? (
+              <div className="flex items-start gap-3 py-4">
+                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-base shrink-0">
+                  🤖
+                </div>
+                <div className="flex-1 space-y-2.5 pt-1">
+                  <div className="h-3.5 w-4/5 bg-card-hover rounded animate-pulse" />
+                  <div className="h-3.5 w-3/5 bg-card-hover rounded animate-pulse [animation-delay:0.15s]" />
+                  <div className="h-3.5 w-2/3 bg-card-hover rounded animate-pulse [animation-delay:0.3s]" />
+                </div>
+              </div>
+            ) : summary ? (
               <div className="text-sm text-foreground leading-relaxed">
                 <Markdown content={summary} />
               </div>
