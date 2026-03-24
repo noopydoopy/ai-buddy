@@ -30,7 +30,7 @@ export default function RootLayout({
     >
       <body className="h-full flex">
         <Sidebar />
-        <main className="flex-1 h-screen overflow-hidden">{children}</main>
+        <main className="flex-1 h-screen overflow-hidden pt-13 lg:pt-0">{children}</main>
       </body>
     </html>
   );
