@@ -4,7 +4,7 @@
 "Building an AI-First Identity through a Personal Life Assistant"
 
 ## Goal
-สร้างระบบผู้ช่วยส่วนตัวที่รันบนเครื่อง Local (Privacy-first) เพื่อบันทึก วิเคราะห์ และสรุปชีวิตประจำวัน โดยอิงจากบุคลิกภาพและเป้าหมายของผู้ใช้
+Develop the My Daily AI Buddy application using a local RAG architecture as a personalized assistant, measured by a functional MVP that allows me to log daily activities and retrieve them through natural language queries, within 14 days, to help streamline my life management and improve memory recall.
 
 ## 1. Core Identity & Persona
 - **The Identity:** "ฉันคือนักพัฒนาอาวุโสที่ใช้ AI จัดการชีวิตอย่างเป็นระบบ"
@@ -17,19 +17,19 @@
 - **Data Input:** Markdown Logs / Simple Chat Input
 - **Intelligence:** RAG (Retrieval-Augmented Generation)
 
-## 3. Implementation Phases (14 Days)
-### Phase 1: The Persona & Environment (Day 1-3)
+## 3. Implementation Phases
+### Phase 1: The Persona & Environment
 - **Setup:** ติดตั้ง Ollama และเตรียม Environment สำหรับ TypeScript
 - **Identity Profile:** สร้าง JSON Configuration ที่เก็บข้อมูลส่วนตัว (Core Values, Habits, Communication Style) เพื่อใช้เป็น System Prompt
 - **Connection:** เขียน Module เชื่อมต่อ Node.js เข้ากับ Ollama API
-### Phase 2: Long-term Memory (Day 4-7)
+### Phase 2: Long-term Memory
 - **Vector Setup:** ตั้งค่า ChromaDB เพื่อเก็บ Daily Logs
 - **Ingestion Pipeline:** พัฒนาฟังก์ชันรับข้อความรายวัน (Input) -> ทำ Embedding -> บันทึกลง ChromaDB พร้อม Timestamp
 - **Context Retrieval:** ทดสอบการดึงข้อมูลตามหัวข้อ (เช่น "อาทิตย์นี้ฉันพูดถึงเรื่องสุขภาพกี่ครั้ง?")
-### Phase 3: The Conversation Logic (Day 8-11)
+### Phase 3: The Conversation Logic
 - **RAG Implementation:** พัฒนา Logic ที่เมื่อ User ถาม -> ค้นหาประวัติที่เกี่ยวข้องใน ChromaDB -> ผสมกับ Persona Profile -> ส่งให้ LLM ตอบ
 - **Planning System:** เพิ่มความสามารถในการวิเคราะห์ "สิ่งที่ต้องทำ" (To-do) จาก Log ของวันก่อนหน้า
-### Phase 4: UI/UX & Refinement (Day 12-14)
+### Phase 4: UI/UX & Refinement
 - **The Client:** พัฒนา Web Interface (React/Tailwind) หรือ CLI ที่ใช้งานง่าย
 - **Summary Feature:** สร้างคำสั่งพิเศษ *Summary of my day* เพื่อให้ AI สรุปผลลัพธ์ประจำวันโดยอิงจากเป้าหมายระยะยาว (*Atomic Habits tracking*)
 
